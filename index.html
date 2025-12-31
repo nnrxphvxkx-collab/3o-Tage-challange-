@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>30 Tage Challenge</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --success: #22c55e;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+
+        .card {
+            background: var(--card);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            max-width: 400px;
+            width: 100%;
+            margin-top: 40px;
+        }
+
+        h1 { font-size: 1.5rem; text-align: center; margin-bottom: 1.5rem; }
+
+        .progress-container {
+            background: #e2e8f0;
+            border-radius: 10px;
+            height: 12px;
+            width: 100%;
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+
+        #bar {
+            background: linear-gradient(90deg, var(--primary), var(--success));
+            height: 100%;
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+        }
+
+        .day {
+            aspect-ratio: 1;
+            background: var(--bg);
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .day:active { transform: scale(0.95); }
+
+        .day.completed {
+            background: var(--success);
+            color: white;
+            border-color: var(--success);
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+        }
+
+        .reset-btn {
+            margin-top: 20px;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            cursor: pointer;
+            text-decoration: underline;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h1>Pushup Challenge</h1>
+        <div class="progress-container"><div id="bar"></div></div>
+        <div class="grid" id="habitGrid"></div>
+        <center><button class="reset-btn" onclick="resetChallenge()">Fortschritt zurücksetzen</button></center>
+    </div>
+
+    <script>
+        const grid = document.getElementById('habitGrid');
+        const bar = document.getElementById('bar');
+        
+        let stats = JSON.parse(localStorage.getItem('pushupChallenge')) || new Array(30).fill(false);
+
+        function updateUI() {
+            grid.innerHTML = '';
+            let count = 0;
+
+            stats.forEach((done, index) => {
+                const day = document.createElement('div');
+                day.className = `day ${done ? 'completed' : ''}`;
+                day.innerText = index + 1;
+                day.onclick = () => toggleDay(index);
+                grid.appendChild(day);
+                if(done) count++;
+            });
+
+            const percent = (count / 30) * 100;
+            bar.style.width = percent + '%';
+
+            localStorage.setItem('pushupChallenge', JSON.stringify(stats));
+            updateBadge();
+        }
+
+        function toggleDay(index) {
+            stats[index] = !stats[index];
+            updateUI();
+        }
+
+        function resetChallenge() {
+            if(confirm("Wirklich alles zurücksetzen?")) {
+                stats = new Array(30).fill(false);
+                updateUI();
+            }
+        }
+
+        async function updateBadge() {
+            if ('setAppBadge' in navigator) {
+                const openTasks = stats.filter(d => !d).length;
+                if (openTasks > 0) {
+                    await navigator.setAppBadge(openTasks);
+                } else {
+                    await navigator.clearAppBadge();
+                }
+            }
+        }
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+
+        if (window.Notification && Notification.permission !== "granted") {
+            Notification.requestPermission();
+        }
+
+        updateUI();
+    </script>
+</body>
+</html>
