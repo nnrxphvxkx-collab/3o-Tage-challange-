@@ -3,167 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>30 Tage Challenge</title>
-    
+    <title>Pushup Pro Tracker</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root {
-            --primary: #4f46e5;
-            --success: #22c55e;
-            --bg: #f8fafc;
-            --card: #ffffff;
-            --text: #1e293b;
-        }
-
-        body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            margin: 0;
-        }
-
-        .card {
-            background: var(--card);
-            padding: 2rem;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            max-width: 400px;
-            width: 100%;
-            margin-top: 40px;
-        }
-
-        h1 { font-size: 1.5rem; text-align: center; margin-bottom: 1.5rem; }
-
-        .progress-container {
-            background: #e2e8f0;
-            border-radius: 10px;
-            height: 12px;
-            width: 100%;
-            margin-bottom: 2rem;
-            overflow: hidden;
-        }
-
-        #bar {
-            background: linear-gradient(90deg, var(--primary), var(--success));
-            height: 100%;
-            width: 0%;
-            transition: width 0.4s ease;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 12px;
-        }
-
-        .day {
-            aspect-ratio: 1;
-            background: var(--bg);
-            border: 2px solid #e2e8f0;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            user-select: none;
-        }
-
-        .day:active { transform: scale(0.95); }
-
-        .day.completed {
-            background: var(--success);
-            color: white;
-            border-color: var(--success);
-            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
-        }
-
-        .reset-btn {
-            margin-top: 20px;
-            background: none;
-            border: none;
-            color: #94a3b8;
-            cursor: pointer;
-            text-decoration: underline;
-            font-size: 0.8rem;
-        }
+        :root { --primary: #4f46e5; --success: #22c55e; --bg: #f8fafc; --card: #ffffff; --text: #1e293b; }
+        body { font-family: sans-serif; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
+        .card { background: var(--card); padding: 1.5rem; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); max-width: 400px; width: 100%; margin-top: 20px; }
+        h1 { font-size: 1.5rem; text-align: center; }
+        .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 20px 0; }
+        .day { aspect-ratio: 1; background: #f1f5f9; border: 2px solid #e2e8f0; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .day.completed { background: var(--success); color: white; border-color: var(--success); }
+        
+        /* Modal Style */
+        #detailView { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 100; }
+        .modal { background: white; padding: 2rem; border-radius: 20px; width: 85%; max-width: 350px; }
+        .yesterday-info { background: #f1f5f9; padding: 10px; border-radius: 10px; font-size: 0.85rem; margin-bottom: 15px; border-left: 4px solid var(--primary); }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 1rem; }
+        button { width: 100%; padding: 12px; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        .btn-save { background: var(--primary); color: white; }
+        .btn-close { background: #eee; color: #666; }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h1>Pushup Challenge</h1>
-        <div class="progress-container"><div id="bar"></div></div>
-        <div class="grid" id="habitGrid"></div>
-        <center><button class="reset-btn" onclick="resetChallenge()">Fortschritt zurücksetzen</button></center>
+<div class="card">
+    <h1>Pushup Challenge</h1>
+    <div class="grid" id="habitGrid"></div>
+    <canvas id="progressChart"></canvas>
+    <center><button style="background:none; color:red; font-size:0.7rem; text-decoration:underline;" onclick="resetAll()">Alles löschen</button></center>
+</div>
+
+<div id="detailView">
+    <div class="modal">
+        <h2 id="modalTitle">Tag X</h2>
+        <div id="yesterdayData" class="yesterday-info">Gestern: Keine Daten</div>
+        <label>Sätze</label>
+        <input type="number" id="setsInput" placeholder="0">
+        <label>Wiederholungen</label>
+        <input type="number" id="repsInput" placeholder="0">
+        <button class="btn-save" onclick="saveData()">Speichern</button>
+        <button class="btn-close" onclick="closeModal()">Abbrechen</button>
     </div>
+</div>
 
-    <script>
+<script>
+    let currentIdx = null;
+    let myChart = null;
+    let stats = JSON.parse(localStorage.getItem('pushupPro')) || Array.from({length: 30}, () => ({ completed: false, sets: 0, reps: 0 }));
+
+    function updateUI() {
         const grid = document.getElementById('habitGrid');
-        const bar = document.getElementById('bar');
+        grid.innerHTML = '';
+        const chartData = [];
+
+        stats.forEach((day, i) => {
+            const div = document.createElement('div');
+            div.className = `day ${day.completed ? 'completed' : ''}`;
+            div.innerText = i + 1;
+            div.onclick = () => openModal(i);
+            grid.appendChild(div);
+            chartData.push(day.completed ? (day.sets * day.reps) : 0);
+        });
+
+        renderChart(chartData);
+        localStorage.setItem('pushupPro', JSON.stringify(stats));
+    }
+
+    function openModal(index) {
+        currentIdx = index;
+        const day = stats[index];
+        const yesterday = index > 0 ? stats[index-1] : null;
+
+        document.getElementById('modalTitle').innerText = `Tag ${index + 1}`;
+        document.getElementById('setsInput').value = day.sets || '';
+        document.getElementById('repsInput').value = day.reps || '';
         
-        let stats = JSON.parse(localStorage.getItem('pushupChallenge')) || new Array(30).fill(false);
+        const yDiv = document.getElementById('yesterdayData');
+        yDiv.innerText = (yesterday && yesterday.completed) 
+            ? `Gestern: ${yesterday.sets}x${yesterday.reps} (${yesterday.sets * yesterday.reps} gesamt)` 
+            : "Gestern: Keine Daten";
 
-        function updateUI() {
-            grid.innerHTML = '';
-            let count = 0;
+        document.getElementById('detailView').style.display = 'flex';
+    }
 
-            stats.forEach((done, index) => {
-                const day = document.createElement('div');
-                day.className = `day ${done ? 'completed' : ''}`;
-                day.innerText = index + 1;
-                day.onclick = () => toggleDay(index);
-                grid.appendChild(day);
-                if(done) count++;
-            });
-
-            const percent = (count / 30) * 100;
-            bar.style.width = percent + '%';
-
-            localStorage.setItem('pushupChallenge', JSON.stringify(stats));
-            updateBadge();
-        }
-
-        function toggleDay(index) {
-            stats[index] = !stats[index];
+    function saveData() {
+        const s = parseInt(document.getElementById('setsInput').value);
+        const r = parseInt(document.getElementById('repsInput').value);
+        if (s > 0 && r > 0) {
+            stats[currentIdx] = { completed: true, sets: s, reps: r };
+            closeModal();
             updateUI();
         }
+    }
 
-        function resetChallenge() {
-            if(confirm("Wirklich alles zurücksetzen?")) {
-                stats = new Array(30).fill(false);
-                updateUI();
-            }
-        }
+    function closeModal() { document.getElementById('detailView').style.display = 'none'; }
 
-        async function updateBadge() {
-            if ('setAppBadge' in navigator) {
-                const openTasks = stats.filter(d => !d).length;
-                if (openTasks > 0) {
-                    await navigator.setAppBadge(openTasks);
-                } else {
-                    await navigator.clearAppBadge();
-                }
-            }
-        }
+    function resetAll() { if(confirm("Wirklich alles löschen?")) { localStorage.clear(); location.reload(); } }
 
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
-        }
+    function renderChart(data) {
+        const ctx = document.getElementById('progressChart').getContext('2d');
+        if (myChart) myChart.destroy();
+        myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: Array.from({length: 30}, (_, i) => i + 1),
+                datasets: [{ label: 'Pushups', data: data, borderColor: '#4f46e5', tension: 0.3, fill: true, backgroundColor: 'rgba(79, 70, 229, 0.1)' }]
+            },
+            options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+        });
+    }
 
-        if (window.Notification && Notification.permission !== "granted") {
-            Notification.requestPermission();
-        }
-
-        updateUI();
-    </script>
+    updateUI();
+</script>
 </body>
 </html>
